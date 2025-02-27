@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/styles.css') }}">
+    <style>
+        body {
+            background-color: #f5f5dc; 
+            font-family: Arial, sans-serif; 
+        }
+        .navigation {
+            margin-right: 20px;
+            margin-bottom: 20px;
+        width: 160px; 
+            background-color: #7c6b6b; 
+            padding: 15px; 
+            border-radius: 10px; 
+        }
+        .nav-link {
+            background-color: #594e4e;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            padding: 5px 10px;
+            margin-bottom: 5px;
+        }
+        .nav-link:hover {
+            background-color: #423535;
+        }
+        .login-container {
+            margin-top: 20px;
+            margin-right: 20px;
+            align-self: flex-end;
+        }
+        .center-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.4);
+        }
+        .modal-content {
+            background-color: #f5f5dc; 
+            margin: 20% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 20%;
+            border-radius: 10px;
+        }
+        .modal-content input[type="text"],
+        .modal-content input[type="password"] {
+            width: 94%;
+            margin-bottom: 10px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .modal-content button[type="submit"] {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            background-color: #594e4e;
+            color: black;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .modal-content button[type="submit"]:hover {
+            background-color: #423535;
+        }
+        .modal-content p {
+            margin-top: 10px;
+        }
+        .modal-content p a {
+            color: #594e4e;
+            text-decoration: none;
+        }
+        .modal-content p a:hover {
+            text-decoration: underline;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        #login-button, #logout-button, #next-button, #finish-button, #record-button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            background-color: #594e4e;	
+            color: black;
+            cursor: pointer;
+            transition: background-color 0.3s, box-shadow 0.3s;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        #login-button:hover, #logout-button:hover, #next-button:hover, #finish-button:hover, #record-button:hover {
+            background-color: #423535;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); 
+        }
+        .test-content {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+		#record-button {
+    display: none; 
+}
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-sm-2">
+    <div class="navigation">
+        <ul class="nav flex-column">
+            {% for link in nav_links %}
+            <li class="nav-item">
+                <a class="nav-link" href="{{ link[1] }}">{{ link[0] }}</a>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+<div class="col-sm-8">
+<div class="center-content">
+    <div class="test-content">
+        <h1>{{ test.title }}</h1>
+        <p>{{ test.description }}</p>
+        
+        <div id="question-container">
+            <p id="question-content"></p>
+<form id="answers-form">
+    <div id="answers-container">
+
+    </div>
+</form>
+        </div>
+        <button type="button" id="record-button">Записать ответ</button>    
+        <button type="button" id="next-button" >Начать тест</button>
+		<button type="button" id="finish-button" style="display: none;">Закончить тест</button>
+    </div>
+	<div id="result-display"></div>
+</div>
+</div>
+<div class="col-md-2">	
+    <div class="login-container">
+        {% if current_user.is_authenticated %}
+        <form id="logout-form" method="POST" action="{{ url_for('logout') }}">
+            <button type="submit" id="logout-button">Выход</button>
+        </form>
+        {% else %}
+        <button id="login-button">Авторизация</button>
+        {% endif %}
+    </div>
+
+    <div id="login-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <form id="login-form" method="POST" action="{{ url_for('login') }}">
+                <input type="text" name="username" placeholder="Username"><br>
+                <input type="password" name="password" placeholder="Password"><br>
+                <button type="submit">Вход</button>
+            </form>
+            <p>Нет аккаунта? <a href="#" id="register-link">Регистрация</a></p>
+        </div>
+    </div>
+
+    <div id="register-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <form id="register-form" method="POST" action="{{ url_for('register') }}">
+                <input type="text" name="username" placeholder="Username"><br>
+                <input type="password" name="password" placeholder="Password"><br>
+                <button type="submit">Зарегистироваться</button>
+            </form>
+            <p>Уже есть аккаунт? <a href="#" id="login-link">Войти</a></p>
+        </div>
+    </div>
+</div>
+</div>
+</div>
+    <script>
+        let currentQuestionIndex = -1;
+        let userAnswers = [];
+		document.getElementById('record-button').addEventListener('click', startRecordingWithDelay);
+        document.getElementById('next-button').addEventListener('click', getNextQuestion);
+        document.getElementById('finish-button').addEventListener('click', finishTest);
+		
+function selectRadioButtonByPredictedNumber(predictedNumberString) {
+    let predictedNumber;
+    if (predictedNumberString === "Один") {
+        predictedNumber = 0;
+    } else if (predictedNumberString === "Два") {
+        predictedNumber = 1;
+    } else if (predictedNumberString === "Три") {
+        predictedNumber = 2;
+    } else if (predictedNumberString === "Четыре") {
+        predictedNumber = 3;
+    } else if (predictedNumberString === "Пять") {
+        predictedNumber = 4;
+    } else if (predictedNumberString === "Шесть") {
+        predictedNumber = 5;
+    } else {
+        console.warn('Invalid predicted value:', predictedNumberString);
+        return; 
+    }
+
+    let radioButtons = document.getElementsByName('answer');
+    if (predictedNumber >= 0 && predictedNumber <= 5) {
+        radioButtons[predictedNumber].checked = true;
+		radioButtons[predictedNumber].dispatchEvent(new Event('change'));
+    } else {
+        console.warn('Predicted number is out of range:', predictedNumber);
+    }
+}
+    function recordAndProcessAudio() {
+        var resultDisplay = document.getElementById('result-display');
+        resultDisplay.innerText = '';
+        fetch('/record_audio', {
+            method: 'POST',
+        })
+        .then(response => {
+            if (response.ok) {
+                return response.json();
+            } else {
+                throw new Error('Recording failed');
+            }
+        })
+        .then(data => {
+            console.log('Response data:', data);  
+            resultDisplay.innerText = 'dev::pred_class: ' + data.predicted_class;
+			console.log('Predicted class:', data.predicted_class);
+
+			selectRadioButtonByPredictedNumber(data.predicted_class);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            resultDisplay.innerText = 'Error occurred: ' + error.message;
+        });
+    }
+
+    function startRecordingWithDelay() {
+        setTimeout(recordAndProcessAudio, 1000); 
+    }
+
+function finishTest() {
+    fetch(`/tests/{{ test.id }}/finish`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ user_answers: userAnswers.map((answer, index) => ({ question_id: index, selected_answer: answer })) })
+    })
+    .then(response => {
+	    window.location.href = '/results';
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert("Failed to finish test. Please try again.");
+    });
+}
+
+function getNextQuestion() {
+document.getElementById('next-button').innerText = 'Дальше';
+document.getElementById('record-button').innerText = 'Записать ответ';
+    fetch(`/tests/{{ test.id }}/next_question`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ current_question_index: currentQuestionIndex })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Failed to get next question.');
+        }
+        return response.json();
+    })
+    .then(data => {
+	
+        if (data.success) {
+            currentQuestionIndex++;
+            document.getElementById('question-content').innerText = data.question_content;
+            let answersContainer = document.getElementById('answers-container');
+            answersContainer.innerHTML = '';
+			document.getElementById('result-display').innerText = '';
+            data.answers.forEach(answer => {
+                let radioBtn = document.createElement('input');
+                radioBtn.type = 'radio';
+                radioBtn.name = 'answer';
+                radioBtn.value = answer;
+
+                let label = document.createElement('label');
+                label.innerText = answer;
+
+                let div = document.createElement('div');
+                div.appendChild(radioBtn);
+                div.appendChild(label);
+
+                answersContainer.appendChild(div);
+
+                radioBtn.addEventListener('change', function() {
+                    userAnswers[currentQuestionIndex] = this.value;
+                });
+            });
+            if (!data.is_last_question) {
+                document.getElementById('finish-button').style.display = 'none';
+				document.getElementById('record-button').style.display = 'block';
+                document.getElementById('next-button').style.display = 'block';
+            } else {
+				document.getElementById('record-button').style.display = 'block';
+                document.getElementById('next-button').style.display = 'none';
+                document.getElementById('finish-button').style.display = 'block';
+            }
+        } else {
+            alert(data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert("Failed to get next question. Please try again.");
+    });
+}
+    </script>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

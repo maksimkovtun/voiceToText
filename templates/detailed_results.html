@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Детальные результаты</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/styles.css') }}">
+	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+
+    body {
+        background-color: #f5f5dc; 
+        font-family: Arial, sans-serif; 
+    }
+    .navigation {
+        margin-right: 20px;
+        margin-bottom: 20px;
+        width: 160px;  
+        background-color: #7c6b6b; 
+        padding: 15px; 
+        border-radius: 10px; 
+    }
+
+.nav-link {
+    background-color: #594e4e;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    padding: 5px 10px;
+    margin-bottom: 5px;
+}
+
+.nav-link:hover {
+    background-color: #423535;
+}
+    .login-container {
+        margin-top: 20px;
+        margin-right: 20px;
+        align-self: flex-end;
+    }
+    .center-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        height: 100vh;
+    }
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0, 0, 0, 0.4);
+    }
+    .modal-content {
+        background-color: #f5f5dc; 
+        margin: 20% auto;
+        padding: 20px;
+        border: 1px solid #888;
+        width: 20%;
+        border-radius: 10px;
+    }
+    .modal-content input[type="text"],
+    .modal-content input[type="password"] {
+        width: 94%;
+        margin-bottom: 10px;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+    }
+    .modal-content button[type="submit"] {
+        width: 100%;
+        padding: 10px;
+        border: none;
+        border-radius: 5px;
+        background-color: #594e4e;
+        color: black;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+    .modal-content button[type="submit"]:hover {
+        background-color: #423535;
+    }
+    .modal-content p {
+        margin-top: 10px;
+    }
+    .modal-content p a {
+        color: #594e4e;
+        text-decoration: none;
+    }
+    .modal-content p a:hover {
+        text-decoration: underline;
+    }
+    .close {
+        color: #aaa;
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+    }
+    .close:hover,
+    .close:focus {
+        color: black;
+        text-decoration: none;
+        cursor: pointer;
+    }
+    #login-button, #logout-button, #view-button {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        background-color: #594e4e;	
+		color: black;
+        cursor: pointer;
+        transition: background-color 0.3s, box-shadow 0.3s;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); 
+    }
+    #login-button:hover, #logout-button:hover, #view-button:hover {
+        background-color: #423535;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); 
+    }
+    #title-label, #des-label{
+	margin-top: 60px; 
+	}
+    </style>
+</head>
+<body>
+<div class="container-fluid">
+    <div class="row">
+    <div class="col-sm-2">
+    <div class="navigation">
+        <ul class="nav flex-column">
+            {% for link in nav_links %}
+            <li class="nav-item">
+                <a class="nav-link" href="{{ link[1] }}">{{ link[0] }}</a>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    </div>
+<div class="col-sm-8">	
+<div class="center-content">
+    <h1>{{ result.test.title }} - детальные результаты</h1>
+    <table class="table">
+         <thead>
+            <tr>
+                <th>Вопрос</th>
+                <th>Правильный ответ</th>
+                <th>Полученный ответ</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for idx in range(result.test.questions|length) %}
+            <tr>
+                <td>{{ result.test.questions[idx].content }}</td>
+                <td>{{ correct_answers[idx] }}</td>
+                <td>{{ user_selected_answers[idx] }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+    </div>
+<div class="col-md-2">	
+    <div class="login-container">
+        {% if current_user.is_authenticated %}
+        <form id="logout-form" method="POST" action="{{ url_for('logout') }}">
+            <button type="submit" id="logout-button">Выход</button>
+        </form>
+        {% else %}
+        <button id="login-button">Авторизация</button>
+        {% endif %}
+    </div>
+
+    <div id="login-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <form id="login-form" method="POST" action="{{ url_for('login') }}">
+                <input type="text" name="username" placeholder="Username"><br>
+                <input type="password" name="password" placeholder="Password"><br>
+                <button type="submit">Вход</button>
+            </form>
+            <p>Нет аккаунта? <a href="#" id="register-link">Регистрация</a></p>
+        </div>
+    </div>
+
+    <div id="register-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <form id="register-form" method="POST" action="{{ url_for('register') }}">
+                <input type="text" name="username" placeholder="Username"><br>
+                <input type="password" name="password" placeholder="Password"><br>
+                <button type="submit">Зарегистрироваться</button>
+            </form>
+            <p>Уже есть аккаунт? <a href="#" id="login-link">Войти</a></p>
+        </div>
+    </div>
+</div>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
